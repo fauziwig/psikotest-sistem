@@ -51,7 +51,6 @@ class DiscScoringService
      *     ...
      *   ]
      * @return array
-     * @throws InvalidArgumentException
      */
     public function calculate(array $answers): array
     {
@@ -61,31 +60,43 @@ class DiscScoringService
 
         $mostScores = ['D' => 0, 'I' => 0, 'S' => 0, 'C' => 0];
         $leastScores = ['D' => 0, 'I' => 0, 'S' => 0, 'C' => 0];
+        $uncompletedQuestions = [];
 
         foreach ($answers as $index => $answer) {
             $questionNum = $answer['question_number'] ?? ($index + 1);
+            $hasMost = false;
+            $hasLeast = false;
 
-            // Validasi keberadaan most_disc dan least_disc
-            if (!isset($answer['most_disc']) || !isset($answer['least_disc'])) {
-                throw new InvalidArgumentException("Soal nomor {$questionNum} belum memiliki pilihan Most atau Least.");
-            }
-
-            $mostDisc = strtoupper((string) $answer['most_disc']);
-            $leastDisc = strtoupper((string) $answer['least_disc']);
-
-            if (!array_key_exists($mostDisc, $mostScores) || !array_key_exists($leastDisc, $leastScores)) {
-                throw new InvalidArgumentException("Tipe dimensi DISC tidak valid pada soal nomor {$questionNum}.");
-            }
-
-            // Validasi jika Most dan Least memilih opsi yang sama
-            if (isset($answer['most_option_id']) && isset($answer['least_option_id'])) {
+            // Validasi jika Most dan Least memilih opsi yang sama (dan bukan null)
+            if (isset($answer['most_option_id']) && isset($answer['least_option_id']) && $answer['most_option_id'] !== null && $answer['least_option_id'] !== null) {
                 if ($answer['most_option_id'] === $answer['least_option_id']) {
                     throw new InvalidArgumentException("Pilihan Most dan Least tidak boleh pada pernyataan yang sama pada nomor {$questionNum}.");
                 }
             }
 
-            $mostScores[$mostDisc]++;
-            $leastScores[$leastDisc]++;
+            // Validasi & hitung pilihan Most
+            if (!empty($answer['most_disc'])) {
+                $mostDisc = strtoupper((string) $answer['most_disc']);
+                if (!array_key_exists($mostDisc, $mostScores)) {
+                    throw new InvalidArgumentException("Tipe dimensi DISC tidak valid pada soal nomor {$questionNum}.");
+                }
+                $mostScores[$mostDisc]++;
+                $hasMost = true;
+            }
+
+            // Validasi & hitung pilihan Least
+            if (!empty($answer['least_disc'])) {
+                $leastDisc = strtoupper((string) $answer['least_disc']);
+                if (!array_key_exists($leastDisc, $leastScores)) {
+                    throw new InvalidArgumentException("Tipe dimensi DISC tidak valid pada soal nomor {$questionNum}.");
+                }
+                $leastScores[$leastDisc]++;
+                $hasLeast = true;
+            }
+
+            if (!$hasMost || !$hasLeast) {
+                $uncompletedQuestions[] = $questionNum;
+            }
         }
 
         // Grafik 3: Change / Mirror (Most minus Least)
@@ -101,6 +112,8 @@ class DiscScoringService
 
         return [
             'total_questions_answered' => count($answers),
+            'is_complete' => empty($uncompletedQuestions),
+            'uncompleted_questions' => $uncompletedQuestions,
             'graph_1_mask' => $mostScores,       // Public / Mask Behavior (Most)
             'graph_2_core' => $leastScores,      // Private / Core Behavior (Least)
             'graph_3_mirror' => $changeScores,   // Perceived / Integrated (Most - Least)

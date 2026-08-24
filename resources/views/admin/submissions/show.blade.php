@@ -170,11 +170,27 @@
         </div>
     </div>
 
+    <!-- Incomplete Test Warning Notice if applicable -->
+    @if(!empty($discScores['uncompleted_questions']) && count($discScores['uncompleted_questions']) > 0)
+        <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-xl shadow-sm text-xs text-amber-900 flex items-start space-x-3">
+            <svg class="w-5 h-5 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+            <div>
+                <strong class="font-bold block text-sm">Peringatan: Jawaban Belum Terisi Lengkap</strong>
+                <p class="mt-0.5 text-amber-800">
+                    Terdapat <strong>{{ count($discScores['uncompleted_questions']) }} butir soal</strong> yang tidak memiliki pasangan Most dan Least lengkap (Soal #{{ implode(', #', $discScores['uncompleted_questions']) }}).
+                    Skor dan grafik di bawah ini dikalkulasi berdasarkan pilihan jawaban yang tersedia saat pengiriman.
+                </p>
+            </div>
+        </div>
+    @endif
+
     <!-- Question Answers Breakdown Section -->
     <div class="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm">
         <div class="flex items-center justify-between pb-4 mb-6 border-b border-slate-100">
             <div>
-                <h3 class="text-lg font-bold text-slate-900">Rincian Jawaban Soal (1 - 24)</h3>
+                <h3 class="text-lg font-bold text-slate-900">Rincian Jawaban Soal (1 - {{ $assessment->questions->count() }})</h3>
                 <p class="text-xs text-slate-500">Pilihan Most (+ M) dan Least (- L) yang dipilih kandidat pada setiap butir soal.</p>
             </div>
             <div class="flex items-center space-x-3 text-xs">
@@ -234,6 +250,7 @@
 
 @push('scripts')
 <script>
+    document.addEventListener('DOMContentLoaded', function () {
         const maskData = @json($graph1Mask);
         const coreData = @json($graph2Core);
         const mirrorData = @json($graph3Mirror);
@@ -258,28 +275,37 @@
         };
 
         // Render Grafik 1: Mask
-        new ApexCharts(document.querySelector("#chartMask"), {
-            ...commonChartConfig,
-            series: [{ name: 'Skor Most (Mask)', data: [maskData.D || 0, maskData.I || 0, maskData.S || 0, maskData.C || 0] }],
-            colors: ['#2563eb'],
-            markers: { ...commonChartConfig.markers, strokeColors: '#2563eb' }
-        }).render();
+        const elMask = document.querySelector("#chartMask");
+        if (elMask) {
+            new ApexCharts(elMask, {
+                ...commonChartConfig,
+                series: [{ name: 'Skor Most (Mask)', data: [maskData.D || 0, maskData.I || 0, maskData.S || 0, maskData.C || 0] }],
+                colors: ['#2563eb'],
+                markers: { ...commonChartConfig.markers, strokeColors: '#2563eb' }
+            }).render();
+        }
 
         // Render Grafik 2: Core
-        new ApexCharts(document.querySelector("#chartCore"), {
-            ...commonChartConfig,
-            series: [{ name: 'Skor Least (Core)', data: [coreData.D || 0, coreData.I || 0, coreData.S || 0, coreData.C || 0] }],
-            colors: ['#f59e0b'],
-            markers: { ...commonChartConfig.markers, strokeColors: '#f59e0b' }
-        }).render();
+        const elCore = document.querySelector("#chartCore");
+        if (elCore) {
+            new ApexCharts(elCore, {
+                ...commonChartConfig,
+                series: [{ name: 'Skor Least (Core)', data: [coreData.D || 0, coreData.I || 0, coreData.S || 0, coreData.C || 0] }],
+                colors: ['#f59e0b'],
+                markers: { ...commonChartConfig.markers, strokeColors: '#f59e0b' }
+            }).render();
+        }
 
         // Render Grafik 3: Mirror
-        new ApexCharts(document.querySelector("#chartMirror"), {
-            ...commonChartConfig,
-            series: [{ name: 'Skor Change (Mirror)', data: [mirrorData.D || 0, mirrorData.I || 0, mirrorData.S || 0, mirrorData.C || 0] }],
-            colors: ['#8b5cf6'],
-            markers: { ...commonChartConfig.markers, strokeColors: '#8b5cf6' }
-        }).render();
+        const elMirror = document.querySelector("#chartMirror");
+        if (elMirror) {
+            new ApexCharts(elMirror, {
+                ...commonChartConfig,
+                series: [{ name: 'Skor Change (Mirror)', data: [mirrorData.D || 0, mirrorData.I || 0, mirrorData.S || 0, mirrorData.C || 0] }],
+                colors: ['#8b5cf6'],
+                markers: { ...commonChartConfig.markers, strokeColors: '#8b5cf6' }
+            }).render();
+        }
     });
 </script>
 @endpush

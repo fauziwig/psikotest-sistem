@@ -154,4 +154,43 @@ class DiscScoringServiceTest extends TestCase
             ],
         ]);
     }
+
+    public function test_can_handle_partial_answers_gracefully(): void
+    {
+        $answers = [
+            [
+                'question_number' => 1,
+                'most_option_id' => 1,
+                'least_option_id' => null, // Incomplete least
+                'most_disc' => 'D',
+                'least_disc' => null,
+            ],
+            [
+                'question_number' => 2,
+                'most_option_id' => null, // Incomplete most
+                'least_option_id' => 4,
+                'most_disc' => null,
+                'least_disc' => 'C',
+            ],
+            [
+                'question_number' => 3,
+                'most_option_id' => 6,
+                'least_option_id' => 7,
+                'most_disc' => 'I',
+                'least_disc' => 'S',
+            ],
+        ];
+
+        $result = $this->service->calculate($answers);
+
+        $this->assertFalse($result['is_complete']);
+        $this->assertEquals([1, 2], $result['uncompleted_questions']);
+        $this->assertEquals(1, $result['graph_1_mask']['D']);
+        $this->assertEquals(1, $result['graph_1_mask']['I']);
+        $this->assertEquals(0, $result['graph_1_mask']['S']);
+        $this->assertEquals(0, $result['graph_1_mask']['C']);
+        $this->assertEquals(1, $result['graph_2_core']['C']);
+        $this->assertEquals(1, $result['graph_2_core']['S']);
+        $this->assertNotEmpty($result['profile_code']);
+    }
 }

@@ -158,6 +158,58 @@ class AdminDashboardTest extends TestCase
         $response->assertSee('Rincian Jawaban Soal (1 - 24)');
     }
 
+    public function test_can_view_submission_detail_with_partial_answers(): void
+    {
+        $candidate = Candidate::create([
+            'name' => 'Fadli Kurniawan',
+            'whatsapp_number' => '081234567890',
+            'applied_position' => 'Fullstack Developer',
+            'source_platform' => 'LinkedIn',
+        ]);
+
+        $assessment = Assessment::with('questions.options')->first();
+
+        $submission = CandidateSubmission::create([
+            'assessment_id' => $assessment->id,
+            'candidate_id' => $candidate->id,
+            'started_at' => now()->subMinutes(10),
+            'submitted_at' => now(),
+            'is_time_out' => false,
+            'answers_payload' => [
+                [
+                    'question_number' => 1,
+                    'most_option_id' => $assessment->questions->first()->options->first()->id,
+                    'least_option_id' => null,
+                    'most_disc' => 'D',
+                    'least_disc' => null,
+                ],
+            ],
+            'disc_scores' => [
+                'is_complete' => false,
+                'uncompleted_questions' => [1],
+                'graph_1_mask' => ['D' => 1, 'I' => 0, 'S' => 0, 'C' => 0],
+                'graph_2_core' => ['D' => 0, 'I' => 0, 'S' => 0, 'C' => 0],
+                'graph_3_mirror' => ['D' => 1, 'I' => 0, 'S' => 0, 'C' => 0],
+                'primary_dimension' => 'D',
+                'secondary_dimension' => 'I',
+                'profile_code' => 'D/I',
+                'profile_name' => 'Dominance (Driver / Direct)',
+                'summary' => 'Berorientasi pada hasil.',
+                'strengths' => ['Tegas'],
+                'work_environment' => 'Dinamis',
+            ],
+        ]);
+
+        $response = $this->actingAs($this->admin)->get(route('admin.submissions.show', $submission->id));
+
+        $response->assertStatus(200);
+        $response->assertSee('Fadli Kurniawan');
+        $response->assertSee('Peringatan: Jawaban Belum Terisi Lengkap');
+        $response->assertSee('Grafik 1: Mask (Most)');
+        $response->assertSee('Grafik 2: Core (Least)');
+        $response->assertSee('Grafik 3: Mirror (Perceived)');
+    }
+
     public function test_can_update_assessment_settings(): void
     {
         $assessment = Assessment::first();
