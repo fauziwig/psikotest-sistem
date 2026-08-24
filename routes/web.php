@@ -4,17 +4,9 @@ use App\Http\Controllers\CandidateAssessmentController;
 use App\Models\Assessment;
 use Illuminate\Support\Facades\Route;
 
-// Redirect root to first published assessment or fallback
+// Redirect root langsung ke halaman pendaftaran tes kandidat DISC
 Route::get('/', function () {
-    try {
-        $published = Assessment::where('is_published', true)->first();
-        if ($published) {
-            return redirect()->route('candidate.register', $published->slug);
-        }
-    } catch (\Throwable $e) {
-        // Fallback if table doesn't exist yet
-    }
-    return view('welcome');
+    return redirect()->route('candidate.register', 'disc-behavioral-assessment');
 });
 
 // Candidate Assessment Routes
