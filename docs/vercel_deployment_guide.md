@@ -53,6 +53,8 @@ git push origin main
 1. Kunjungi [https://vercel.com](https://vercel.com) dan login/daftar menggunakan akun GitHub Anda.
 2. Di dashboard Vercel, klik tombol **"Add New..."** $\rightarrow$ pilih **"Project"**.
 3. Cari repository GitHub project `psikotest-sistem` Anda, lalu klik **"Import"**.
+4. Pada dropdown **Framework Preset**, pilih **`Other`** (atau biarkan default jika sudah otomatis `Other`).
+5. Pada bagian **Build and Output Settings**, biarkan semua toggle dalam keadaan default / kosong (karena konfigurasi sudah ditangani oleh `vercel.json`).
 
 ---
 
