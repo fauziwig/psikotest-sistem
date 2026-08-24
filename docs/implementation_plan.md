@@ -1,62 +1,44 @@
-# Implementation Plan: DISC Scoring Engine & Standard Question Bank Seeder
+# Implementation Plan: Candidate Test Flow (Registration, Runner, Timer, & Submission)
 
-Rencana ini merinci pembuatan **DISC Scoring Engine Service**, **Seeder Bank Soal Standar DISC (24 Nomor / 96 Opsi Pernyataan)**, default company branding & HR admin, serta pengujian otomatisnya.
-
----
-
-## 1. Spesifikasi Komponen
-
-### A. `DiscScoringService` (`app/Services/DiscScoringService.php`)
-Service class untuk memproses dan mengkalkulasi respon jawaban kandidat:
-- **Input**:
-  - Array jawaban per butir soal: `[{ 'question_number': 1, 'most_disc': 'D', 'least_disc': 'C', 'most_option_id': 1, 'least_option_id': 4 }, ...]`
-- **Kalkulasi**:
-  1. **Grafik 1 (Mask / Public Profile)**: Menghitung frekuensi *Most* (M) untuk dimensi D, I, S, C.
-  2. **Grafik 2 (Core / Private Profile)**: Menghitung frekuensi *Least* (L) untuk dimensi D, I, S, C.
-  3. **Grafik 3 (Mirror / Perceived Profile)**: Selisih skor `Most - Least` (D, I, S, C).
-  4. **Profile Pattern & Summary**: Menentukan tipe kepribadian dominan (misal: "High D", "D/I - Result Oriented", dsb) dan deskripsi ringkasnya.
-- **Validasi**:
-  - Memastikan *Most* dan *Least* tidak memilih opsi yang sama pada butir soal yang sama.
-  - Memastikan seluruh nomor soal terisi lengkap.
+Rencana ini merinci implementasi modul **Candidate Test Flow** agar kandidat dapat membuka link publik assessment, mendaftarkan data diri, mengerjakan tes DISC dengan timer, dan mengirimkan jawaban untuk dikalkulasi otomatis.
 
 ---
 
-### B. Seeder Bank Soal Standar DISC (`database/seeders/DiscAssessmentSeeder.php`)
-Membuat data awal standar industri untuk psikotes DISC:
-1. **Default Company Setting**:
-   - `company_name`: "TalentCorp International"
-   - `primary_color`: `#2563eb`
-   - `secondary_color`: `#475569`
-2. **Default HR User**:
-   - `name`: "HR Administrator"
-   - `email`: "hr@company.com"
-   - `password`: "password123"
-   - `role`: "hr"
-3. **Assessment Standar**:
-   - `title`: "DISC Behavioral Assessment"
-   - `slug`: "disc-behavioral-assessment"
-   - `duration_minutes`: 15
-   - `is_published`: true
-4. **24 Paket Butir Soal**:
-   - 24 nomor pertanyaan forced-choice.
-   - Masing-masing nomor memiliki 4 opsi pernyataan bahasa Indonesia yang merepresentasikan dimensi **D** (Dominance), **I** (Influence), **S** (Steadiness), dan **C** (Compliance).
+## 1. Alur Pengguna (Candidate Flow)
+
+1. **Akses Link Assessment**: Kandidat membuka `/assessment/{slug}`.
+2. **Formulir Data Diri (4 Kolom)**:
+   - Nama Lengkap
+   - Nomor WhatsApp
+   - Posisi yang Dilamar
+   - Platform Lamaran Kerja (*Glints, Pintarnya.com, Jobstreet, LinkedIn, Referral, Lainnya*)
+3. **Instruksi & Mulai**: Kandidat menekan tombol *Mulai Tes*, sistem mencatat `started_at` dan mengalihkan ke halaman pengerjaan soal.
+4. **Halaman Test Runner (Alpine.js)**:
+   - Countdown timer interaktif berbasis timestamp server.
+   - Grid nomor soal 1-24 dengan indikator visual kelengkapan.
+   - Matrix forced-choice (*Most* & *Least* mutually exclusive).
+   - Auto-submit jika waktu habis.
+5. **Submit & Kalkulasi Skor**:
+   - Backend memvalidasi integritas jawaban dan waktu pengerjaan.
+   - `DiscScoringService` mengkalkulasi 3 grafik DISC (*Mask*, *Core*, *Mirror*) dan tipe kepribadian.
+   - Menyimpan hasil ke tabel `candidate_submissions`.
+6. **Halaman Selesai**: Pesan konfirmasi dan ringkasan durasi pengerjaan.
 
 ---
 
-## 2. Rencana File Baru
+## 2. File yang Dibuat & Dimodifikasi
 
-- [NEW] `app/Services/DiscScoringService.php`
-- [NEW] `database/seeders/DiscAssessmentSeeder.php`
-- [NEW] `tests/Unit/DiscScoringServiceTest.php`
-- [MODIFY] `database/seeders/DatabaseSeeder.php`
+- `app/Http/Controllers/CandidateAssessmentController.php`
+- `resources/views/candidate/layouts/app.blade.php`
+- `resources/views/candidate/register.blade.php`
+- `resources/views/candidate/runner.blade.php`
+- `resources/views/candidate/completed.blade.php`
+- `routes/web.php`
+- `tests/Feature/CandidateAssessmentFlowTest.php`
 
 ---
 
-## 3. Verification Plan
+## 3. Rencana Pengujian
 
-### Automated Tests
-```bash
-php artisan test --filter=DiscScoringServiceTest
-php artisan migrate:fresh --seed --seeder=DiscAssessmentSeeder
-php artisan test
-```
+- **Automated Test**: `tests/Feature/CandidateAssessmentFlowTest.php` (Menguji alur registrasi, validasi form, akses timer, dan penyimpanan skor setelah submit).
+- **Manual Verification**: Membuka halaman di browser dan mencoba alur pengerjaan tes secara langsung.
