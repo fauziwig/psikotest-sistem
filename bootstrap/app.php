@@ -5,8 +5,14 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 
-// Auto-create directories for serverless environment in /tmp
-if (isset($_ENV['VERCEL']) || isset($_ENV['VIEW_COMPILED_PATH']) || isset($_ENV['AWS_LAMBDA_FUNCTION_NAME'])) {
+// Deteksi environment serverless (Vercel / AWS Lambda) via getenv, $_SERVER, $_ENV
+$isServerless = getenv('VERCEL') !== false
+    || getenv('VIEW_COMPILED_PATH') !== false
+    || getenv('AWS_LAMBDA_FUNCTION_NAME') !== false
+    || isset($_SERVER['VERCEL'])
+    || isset($_ENV['VERCEL']);
+
+if ($isServerless) {
     $storagePath = '/tmp/storage';
     $dirs = [
         $storagePath,
@@ -18,11 +24,13 @@ if (isset($_ENV['VERCEL']) || isset($_ENV['VIEW_COMPILED_PATH']) || isset($_ENV[
         $storagePath . '/framework/sessions',
         $storagePath . '/framework/views',
         $storagePath . '/logs',
+        '/tmp/bootstrap',
         '/tmp/bootstrap/cache',
+        '/tmp/views',
     ];
     foreach ($dirs as $dir) {
         if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
+            @mkdir($dir, 0755, true);
         }
     }
 }
@@ -42,7 +50,7 @@ $app = Application::configure(basePath: dirname(__DIR__))
         );
     })->create();
 
-if (isset($_ENV['VERCEL']) || isset($_ENV['VIEW_COMPILED_PATH']) || isset($_ENV['AWS_LAMBDA_FUNCTION_NAME'])) {
+if ($isServerless) {
     $app->useStoragePath('/tmp/storage');
 }
 
