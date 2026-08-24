@@ -1,44 +1,37 @@
-# Implementation Plan: Candidate Test Flow (Registration, Runner, Timer, & Submission)
+# Implementation Plan: HR / Admin Dashboard & DISC Visualization
 
-Rencana ini merinci implementasi modul **Candidate Test Flow** agar kandidat dapat membuka link publik assessment, mendaftarkan data diri, mengerjakan tes DISC dengan timer, dan mengirimkan jawaban untuk dikalkulasi otomatis.
-
----
-
-## 1. Alur Pengguna (Candidate Flow)
-
-1. **Akses Link Assessment**: Kandidat membuka `/assessment/{slug}`.
-2. **Formulir Data Diri (4 Kolom)**:
-   - Nama Lengkap
-   - Nomor WhatsApp
-   - Posisi yang Dilamar
-   - Platform Lamaran Kerja (*Glints, Pintarnya.com, Jobstreet, LinkedIn, Referral, Lainnya*)
-3. **Instruksi & Mulai**: Kandidat menekan tombol *Mulai Tes*, sistem mencatat `started_at` dan mengalihkan ke halaman pengerjaan soal.
-4. **Halaman Test Runner (Alpine.js)**:
-   - Countdown timer interaktif berbasis timestamp server.
-   - Grid nomor soal 1-24 dengan indikator visual kelengkapan.
-   - Matrix forced-choice (*Most* & *Least* mutually exclusive).
-   - Auto-submit jika waktu habis.
-5. **Submit & Kalkulasi Skor**:
-   - Backend memvalidasi integritas jawaban dan waktu pengerjaan.
-   - `DiscScoringService` mengkalkulasi 3 grafik DISC (*Mask*, *Core*, *Mirror*) dan tipe kepribadian.
-   - Menyimpan hasil ke tabel `candidate_submissions`.
-6. **Halaman Selesai**: Pesan konfirmasi dan ringkasan durasi pengerjaan.
+Rencana ini merinci implementasi modul **HR / Admin Dashboard** yang mencakup autentikasi HR, review daftar hasil kandidat, visualisasi 3 grafik profil DISC (ApexCharts/Chart.js), detail rincian jawaban 24 butir soal, manajemen assessment, dan pengaturan branding perusahaan.
 
 ---
 
-## 2. File yang Dibuat & Dimodifikasi
+## 1. Modul & Fitur Utama
 
-- `app/Http/Controllers/CandidateAssessmentController.php`
-- `resources/views/candidate/layouts/app.blade.php`
-- `resources/views/candidate/register.blade.php`
-- `resources/views/candidate/runner.blade.php`
-- `resources/views/candidate/completed.blade.php`
-- `routes/web.php`
-- `tests/Feature/CandidateAssessmentFlowTest.php`
+1. **Autentikasi HR / Admin**:
+   - Route `/admin/login`, `/admin/logout`.
+   - Proteksi route admin via middleware `auth`.
+2. **Dashboard Overview (`/admin/dashboard`)**:
+   - Metrik statistik kandidat & distribusi tipe DISC.
+   - Daftar 5 submission terbaru.
+3. **Daftar Submission Kandidat (`/admin/submissions`)**:
+   - Filter & pencarian nama, posisi, platform sumber lamaran.
+   - Status pengerjaan, skor utama, direct chat WA, dan link detail.
+4. **Detail Hasil Kandidat & Visualisasi 3 Grafik DISC (`/admin/submissions/{id}`)**:
+   - Header profil kandidat & durasi pengerjaan.
+   - **Visualisasi 3 Grafik Garis DISC**:
+     - *Grafik 1 (Mask / Most)*: Perilaku adaptasi kerja.
+     - *Grafik 2 (Core / Least)*: Respon di bawah tekanan.
+     - *Grafik 3 (Mirror / Change)*: Integrasi kepribadian.
+   - Ringkasan profil, kekuatan, lingkungan kerja ideal.
+   - Detail pilihan jawaban 24 nomor soal.
+5. **Manajemen Assessment (`/admin/assessments`)**:
+   - Pengaturan durasi & toggle status publish.
+   - Copy link publik assessment.
+6. **Pengaturan Branding Perusahaan (`/admin/branding`)**:
+   - Nama perusahaan, upload logo, upload favicon, dan color picker (Warna Primer & Sekunder).
 
 ---
 
-## 3. Rencana Pengujian
+## 2. Rencana Pengujian
 
-- **Automated Test**: `tests/Feature/CandidateAssessmentFlowTest.php` (Menguji alur registrasi, validasi form, akses timer, dan penyimpanan skor setelah submit).
-- **Manual Verification**: Membuka halaman di browser dan mencoba alur pengerjaan tes secara langsung.
+- **Automated Feature Test**: `tests/Feature/AdminDashboardTest.php` (Menguji login, akses dashboard terproteksi, review detail hasil dengan 3 grafik DISC, update durasi assessment, dan update branding).
+- **Manual Verification**: Login sebagai HR dan verifikasi kelengkapan grafik visual serta branding settings.
